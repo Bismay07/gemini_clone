@@ -26,56 +26,44 @@ const ContextProvider = ({ children }) => {
 
   
 
+const onSubmit = async (prompt, setMessages, messages) => {
+  setLoading(true);
+  setDisplayResult(true);
+  setInput(prompt);
+  setRecentPrompts(input);
 
-  const onSubmit = async ( prompt, setMessage, message) => {
-    setLoading(true);
-    setDisplayResult(true);
-    setInput(prompt)
-    setRecentPrompts(input);
+  if (input && prompt) {
+    setPrevPrompts((prev) => [...prev, input]);
+  }
 
-    if (input && prompt) {
-      setPrevPrompts((prev) => [...prev, input]);
+  const response = input ? await run(input, setMessages) : await run(prompt, setMessages);
+
+  const boldResponse = response.split("**");
+  let newArray = "";
+  for (let i = 0; i < boldResponse.length; i++) {
+    if (i === 0 || i % 2 !== 1) {
+      newArray += boldResponse[i];
+    } else {
+      newArray += "<b>" + boldResponse[i] + "</b>";
     }
+  }
+  let newRes = newArray.split("*").join("<br>");
+  let newRes2 = newRes.split(" ");
 
-    const response = input ? await run(input, setMessage) : await run(prompt, setMessage);
+  const promises = newRes2.map((newWord, i) => new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(newWord + " ");
+    }, 70 * i);
+  }));
 
-    const boldResponse = response.split("**");
-    let newArray = "";
-    for (let i = 0; i < boldResponse.length; i++) {
-      if (i === 0 || i % 2 !== 1) {
-        newArray += boldResponse[i];
-      } else {
-        newArray += "<b>" + boldResponse[i] + "</b>";
-      }
-    }
-    let newRes = newArray.split("*").join("</br>");
-    let newRes2 = newRes.split(" ");
+  const resultWithDelays = await Promise.all(promises);
 
-
-    const promises = []
-    for (let i = 0; i < newRes2.length; i++) {
-      const newWord = newRes2[i];
-      promises.push(new Promise((resolve) => {
-        setTimeout(() => {
-          resolve(newWord + " ");
-        }, 70 * i);
-      }));
-    }
-  
-    await Promise.all(promises);
+  setMessages((prev) => [...prev, { role: "gpt", content: resultWithDelays.join(" ") }]);
+  setLoading(false);
+  setInput("");
+};
 
 
-    setResult(newRes2.join(" "))
-
-    // for (let i = 0; i < newRes2.length; i++) {
-    //   const newWord = newRes2[i];
-    //   paragraphDelay(i, newWord + " ");
-    // }
-    setLoading(false);
-    // setResult(response)
-    setInput("");
-
-}
   
   const toggle = () => setTheme(theme === "light" ? "dark" : "light");
 

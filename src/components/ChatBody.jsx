@@ -1,67 +1,31 @@
 "use client";
-import React, { useContext, useEffect } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import InputForm from "./Input";
-import { useState } from "react";
 import { ScrollShadow } from "@nextui-org/react";
-import { BrainCircuit,User } from "lucide-react";
 import { Context } from "@/context/ContextProvider";
-import { history } from "@/lib/gemini";               
-import { content } from "../../tailwind.config";
-import { userchat, modelchat } from "@/lib/gemini";
+import ChatCard from "./ChatCard";
 
 const ChatBody = () => {
-
-  const { onSubmit,
-    recentPrompts,
-    displayResult,
-    loading,
-    result,
-    input,
-    setInput } = useContext(Context);
-
-  const values = useContext(Context);
-
+  const { onSubmit, displayResult, loading } = useContext(Context);
   const [messages, setMessages] = useState([]);
+  const chatContainerRef = useRef(null);
 
-  const [responses, setResponses] = useState([])
-
-  // const [prompt, setPrompt] = useState(
-  //   {
-  //     role: "",
-  //     content: ""
-  //   }
-  // )
-
-  
-                                                                                                           
   const handleSend = (message) => {
-    // console.log(values.result);
-    
-    // console.log(messages);
-    // Simulate GPT response
-    // setPrompt()
-    // console.log(message);
-    // console.log(history);
-    setMessages(prev=>[...prev, {role:"user", content: message}])
-    onSubmit({
-      role: "user",
-      content: message
-    }, setMessages, messages)
-    // console.log(messages);
-    
-    // console.log(msgs);
-    // setMessages(msgs)
-
-    setResponses(prev => [...prev, messages])
-    // console.log(responses);
-    
+    setMessages((prev) => [...prev, { role: "user", content: message }]);
+    onSubmit({ role: "user", content: message }, setMessages, messages);
   };
 
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+    }
+  }, [messages]);
+
   return (
-    <div className=" flex h-[85%] pt-4 overflow-scroll mb-6 overflow-x-hidden no-scrollbar justify-center">
-      <ScrollShadow hideScrollBar className=" h-[100%] w-[80%] justify-center ">
-        <div className="w-[100%] justify-center ">
-          <div className="w-[100%] h-[80vh]">
+    <div className="flex h-[85%] pt-4 overflow-scroll mb-6 overflow-x-hidden no-scrollbar justify-center">
+      <ScrollShadow hideScrollBar className="h-[100%] w-[80%] justify-center">
+        <div className="w-[100%] justify-center">
+          <div className="w-[100%] h-[80vh] overflow-auto" ref={chatContainerRef}>
             {!displayResult ? (
               <div className="text-left mt-12">
                 <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-l from-blue-600 to-pink-700">
@@ -73,24 +37,13 @@ const ChatBody = () => {
               </div>
             ) : (
               messages.map((m, index) => (
-                <div
+                <ChatCard
                   key={index}
-                  className={`relative mb-2 flex ${
-                    m.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div className="relative border-1 border-gray-700 rounded-lg bg-secondary w-[50vh] p-4 ">
-                    {m.role === "user" ? (
-                      <User
-                        size={25}
-                        className="absolute top-0 right-0 transform -translate-x-3.5 translate-y-3"
-                      />
-                    ) : (
-                      loading?<div>Loading</div>:<BrainCircuit size={35} className="px-2" />
-                    )}
-                    <p className={`text-m font-bold text-gray-500 p-2.5 ${m.role === "user" ? "mt-7" : "mt-1"}`}>{m.content}</p>
-                  </div>
-                </div>
+                  index={index}
+                  role={m.role}
+                  text={m.content}
+                  renderNow={loading}
+                />
               ))
             )}
           </div>
